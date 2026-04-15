@@ -34,22 +34,18 @@ fn main() {
     let estimated_max = estimate_max(cli.weight, cli.reps, cli.training_type);
 
     for target_reps in 1..=MAX_REPS_TO_PRINT {
-        let training_weight = if target_reps == 1 {
-            estimated_max
-        } else {
-            weight_for_reps(estimated_max, target_reps, cli.training_type)
-        };
+        let training_weight = weight_for_reps(estimated_max, target_reps, cli.training_type);
 
         println!("{target_reps:>2} {:>8}", format_weight(training_weight));
     }
 }
 
 fn estimate_max(weight: f64, reps: u32, training_type: TrainingType) -> f64 {
-    weight + weight * (reps as f64) / training_type.coefficient()
+    weight + weight * ((reps - 1) as f64) / training_type.coefficient()
 }
 
 fn weight_for_reps(estimated_max: f64, reps: u32, training_type: TrainingType) -> f64 {
-    estimated_max / (1.0 + (reps as f64) / training_type.coefficient())
+    estimated_max / (1.0 + ((reps - 1) as f64) / training_type.coefficient())
 }
 
 fn format_weight(weight: f64) -> String {
@@ -80,6 +76,15 @@ mod tests {
     fn one_rep_output_uses_estimated_max() {
         let estimated_max = estimate_max(100.0, 5, TrainingType::Bp);
 
-        assert!((estimated_max - 112.5).abs() < 1e-9);
+        assert!((estimated_max - 110.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn one_rep_input_stays_the_same_weight() {
+        let estimated_max = estimate_max(100.0, 1, TrainingType::Bp);
+        let recalculated = weight_for_reps(estimated_max, 1, TrainingType::Bp);
+
+        assert!((estimated_max - 100.0).abs() < 1e-9);
+        assert!((recalculated - 100.0).abs() < 1e-9);
     }
 }
